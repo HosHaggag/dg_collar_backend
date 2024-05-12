@@ -1,0 +1,11 @@
+{
+  "ambientTemperature": 25.19,
+  "forwardAcceleration": 9.97,
+  "heartRate": 0,
+  "horizontalAcceleration": 1.58,
+  "objectTemperature": 24.33,
+  "rotationX": -0.1,
+  "rotationY": 0.01,
+  "rotationZ": -0.01,
+  "verticalAcceleration": -0.11
+}
