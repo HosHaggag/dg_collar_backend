@@ -1,3 +1,5 @@
+console.log(`Starting imports...`);
+
 const express = require("express");
 var cors = require("cors");
 var path = require("path");
@@ -6,6 +8,7 @@ const db = require("./database/config");
 const mainApiRoute = require("./routes/index");
 const { notFound, errorHandler } = require("./utils/errorHandler");
 //
+console.log(`Starting routes...`);
 
 const app = express();
 const { PORT = 4000 } = process.env;
@@ -27,9 +30,6 @@ app.use(`/uploads`, express.static(path.join(__dirname, "uploads")));
 // });
 app.use(notFound);
 app.use(errorHandler);
-
-
-
 
 db.then(() => {
   app.listen(PORT, () => {
