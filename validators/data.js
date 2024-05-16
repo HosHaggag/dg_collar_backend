@@ -1,8 +1,8 @@
 const yup = require("yup");
 
 const getDataSchema = yup.object({
-  startTime: yup.date().optional().nullable(),
-  endTime: yup.date().optional().nullable(),
+  startDate: yup.date().optional().nullable(),
+  endDate: yup.date().optional().nullable(),
   limit: yup.number().integer().positive().optional().nullable(),
   skip: yup.number().integer().positive().optional().nullable(),
 });

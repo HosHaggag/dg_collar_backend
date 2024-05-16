@@ -1,5 +1,6 @@
 const moment = require("moment-timezone");
 const Data = require("../models/data");
+const { isValidDate, sortDates } = require("../utils/date");
 
 const { addDataSchema, getDataSchema } = require("../validators/data");
 
@@ -7,23 +8,26 @@ const { addDataSchema, getDataSchema } = require("../validators/data");
 const getDataInTimeRange = async (req, res) => {
   try {
     await getDataSchema.validate(req.body);
-    let { startTime, endTime, limit, skip } = req.body;
+    let { startDate, endDate, limit, skip } = req.body;
     // Validate and parse limit and skip parameters
     limit = parseInt(limit);
     skip = parseInt(skip);
 
     // Calculate start and end times if not provided
-    if (!startTime) {
-      startTime = moment().tz("Africa/Cairo").subtract(1, "week").toDate();
-    }
-    if (!endTime) {
-      endTime = moment().tz("Africa/Cairo").toDate(); // Current time
-    }
 
-    console.log({ startTime, endTime });
+    if (!startDate || !isValidDate(startDate, "YYYY-MM-DD")) {
+      const now = moment().tz("Africa/Cairo").format();
+      startDate = moment(now.slice(0, 10)).add(1, "day").format("YYYY-MM-DD");
+    }
+    if (!endDate || !isValidDate(endDate, "YYYY-MM-DD")) {
+      const now = moment().tz("Africa/Cairo").format();
+      const startDate = now.slice(0, 10);
+      endDate = moment(startDate).subtract(1, "week").format("YYYY-MM-DD");
+    }
+    console.log({ startDate, endDate });
 
     let query = {
-      createdAt: { $gte: startTime, $lte: endTime },
+      createdAt: sortDates(startDate, endDate),
     };
     let findQuery = Data.find(query);
     if (!isNaN(limit)) {
@@ -55,7 +59,3 @@ module.exports = {
   getDataInTimeRange,
   addData,
 };
-
-function isValidDate(dateString, format) {
-  return moment(dateString, format, true).isValid();
-}
