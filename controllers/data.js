@@ -1,5 +1,5 @@
-const Data = require("../models/Data");
 const moment = require("moment-timezone");
+const Data = require("../models/Data");
 
 const { addDataSchema, getDataSchema } = require("../validators/data");
 
