@@ -15,6 +15,10 @@ router.get("/:userId", resolver(categoriesController.getCategories));
 
 // Animal Routes within a Category
 router.post("/animals/add", isAuth, resolver(categoriesController.addAnimal));
+router.delete("/animals/delete", isAuth, resolver(categoriesController.deleteAnimal));
+router.put("/animals/update", isAuth, resolver(categoriesController.updateAnimal));
+
+// 
 router.get("/:userId/:categoryId/animals", resolver(categoriesController.getAnimals));
 router.put("/:userId/:categoryId/:animalId", resolver(categoriesController.updateAnimal));
 router.delete("/:userId/:categoryId/:animalId", resolver(categoriesController.deleteAnimal));

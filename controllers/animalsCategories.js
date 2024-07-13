@@ -1,4 +1,5 @@
 const User = require("../models/User");
+const Collar = require("../models/Collar");
 const formidable = require("formidable");
 const { uploadFileToS3 } = require(`./../utils/s3/uploadFileToS3`);
 const { uploadMultiple } = require("../utils/multer");
@@ -54,43 +55,98 @@ exports.getCategories = async (req, res) => {
 
 // ____________________________________________________________________________________________________________
 
-// Add an animal to a category
-exports.addAnimal = async (req, res) => {
-  // const form = new formidable.IncomingForm();
-
+// update animal
+exports.updateAnimal = async (req, res) => {
   await uploadMultipleS3(req, res);
-
-  console.log(req.body);
-
-  const { name, category, birth_date, healthStatus, collarId, categoryId } = req.body;
   const user = req.user;
+  const {
+    name,
+    category,
+    birth_date,
+    healthStatus,
+    collarId,
+    categoryId,
+    newCategoryId,
+    animalId,
+  } = req.body;
 
   const categoryItem = user.categories.id(categoryId);
+
+  const animalItem = categoryItem.animals.id(animalId);
 
   if (!categoryItem) {
     return res.status(404).json({ message: "Category not found" });
   }
+
+  const newCategoryItem = user.categories.id(newCategoryId);
+
+  if (!newCategoryItem) {
+    return res.status(404).json({ message: "Category not found" });
+  }
+
+  if (categoryId !== newCategoryId) {
+    categoryItem.animals.pull(animalId);
+    newCategoryItem.animals.push(animalItem);
+  }
+
+  const animal = newCategoryItem.animals.id(animalId);
 
   const newAnimal = {
     name,
     category,
     birth_date,
     healthStatus,
-    gallery: req.files.map((e) => e?.key),
+    gallery: req.files.length > 0 ? req.files.map((e) => e?.key) : animal.gallery,
   };
-
   if (collarId) {
-    const collar = user.collars.id(collarId);
-    if (!collar) {
-      throw new Error("Wrong Collar Id");
+    try {
+      const collar = await Collar.findById(collarId);
+      if (!collar) {
+        throw new Error("Wrong Collar Id");
+      }
+    } catch (err) {
+      return res.status(404).json({ message: "Wrong Collar Id" });
     }
 
     newAnimal.collarId = collarId;
   }
+  Object.assign(animal, newAnimal);
 
-  categoryItem.animals.push(newAnimal);
   await user.save();
 
+  res.status(201).json({ message: "Animal added", categories: user.categories });
+};
+
+// Add an animal to a category
+exports.addAnimal = async (req, res) => {
+  await uploadMultipleS3(req, res);
+  const { name, birth_date, healthStatus, collarId, categoryId } = req.body;
+  const user = req.user;
+  const categoryItem = user.categories.id(categoryId);
+
+  if (!categoryItem) {
+    return res.status(404).json({ message: "Category not found" });
+  }
+  const newAnimal = {
+    name,
+    birth_date,
+    healthStatus,
+    gallery: req.files.map((e) => e?.key),
+  };
+  if (collarId) {
+    try {
+      const collar = await Collar.findById(collarId);
+      if (!collar) {
+        throw new Error("Wrong Collar Id");
+      }
+    } catch (err) {
+      return res.status(404).json({ message: "Wrong Collar Id" });
+    }
+
+    newAnimal.collarId = collarId;
+  }
+  categoryItem.animals.push(newAnimal);
+  await user.save();
   res.status(201).json({ message: "Animal added", categories: user.categories });
 };
 
@@ -116,49 +172,12 @@ exports.getAnimals = async (req, res) => {
   }
 };
 
-// Update an animal in a category
-exports.updateAnimal = async (req, res) => {
-  try {
-    const { userId, categoryId, animalId } = req.params;
-    const { name, category, age, healthStatus, collarId } = req.body;
-    const user = await User.findById(userId);
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    const categoryItem = user.categories.id(categoryId);
-
-    if (!categoryItem) {
-      return res.status(404).json({ message: "Category not found" });
-    }
-
-    const animalItem = categoryItem.animals.id(animalId);
-
-    if (!animalItem) {
-      return res.status(404).json({ message: "Animal not found" });
-    }
-
-    animalItem.name = name || animalItem.name;
-    animalItem.category = category || animalItem.category;
-    animalItem.age = age !== undefined ? age : animalItem.age;
-    animalItem.healthStatus = healthStatus || animalItem.healthStatus;
-    animalItem.collarId = collarId || animalItem.collarId;
-    categoryItem.lastSync = new Date();
-
-    await user.save();
-
-    res.status(200).json({ message: "Animal updated", categories: user.categories });
-  } catch (error) {
-    res.status(500).json({ message: "Server error", error });
-  }
-};
-
 // Delete an animal from a category
 exports.deleteAnimal = async (req, res) => {
   try {
-    const { userId, categoryId, animalId } = req.params;
-    const user = await User.findById(userId);
+    const { categoryId, animalId } = req.body;
+
+    const user = req.user;
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -176,13 +195,15 @@ exports.deleteAnimal = async (req, res) => {
       return res.status(404).json({ message: "Animal not found" });
     }
 
-    animalItem.remove();
-    categoryItem.lastSync = new Date();
+    // Remove the animal from the category's animals array
+    categoryItem.animals.pull(animalId);
 
+    // Save the updated user document
     await user.save();
 
     res.status(200).json({ message: "Animal deleted", categories: user.categories });
   } catch (error) {
+    console.log({ error });
     res.status(500).json({ message: "Server error", error });
   }
 };

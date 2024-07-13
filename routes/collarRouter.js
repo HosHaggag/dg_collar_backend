@@ -8,6 +8,6 @@ const { resolver } = require("../utils/errorHandler");
 router.post("/add", resolver(collarController.addCollar));
 // router.put("/edit", isAuth, resolver(collarController.editCollar));
 // router.delete("/delete", isAuth, resolver(collarController.deleteCategory));
-router.get("/:collarId", isAuth, resolver(collarController.getCategories));
+router.get("/:collarId", isAuth, resolver(collarController.getCollar));
 
 module.exports = router;
