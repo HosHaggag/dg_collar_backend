@@ -47,10 +47,10 @@ app.use((req, res, next) => {
 app.use(`/uploads`, express.static(path.join(__dirname, "uploads")));
 
 app.use("/api", mainApiRoute);
-// app.use(express.static(path.join(__dirname, "front-build")));
-// app.get(`*`, (req, res) => {
-//   res.sendFile(path.join(__dirname, "front-build", "index.html"));
-// });
+app.use(express.static(path.join(__dirname, "dist")));
+app.get(`*`, (req, res) => {
+  res.sendFile(path.join(__dirname, "dist", "index.html"));
+});
 // });
 app.use(notFound);
 app.use(errorHandler);
