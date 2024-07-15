@@ -68,6 +68,7 @@ exports.updateAnimal = async (req, res) => {
     categoryId,
     newCategoryId,
     animalId,
+    gender,
   } = req.body;
 
   const categoryItem = user.categories.id(categoryId);
@@ -95,6 +96,7 @@ exports.updateAnimal = async (req, res) => {
     name,
     category,
     birth_date,
+    gender,
     healthStatus,
     gallery: req.files.length > 0 ? req.files.map((e) => e?.key) : animal.gallery,
   };
@@ -109,6 +111,8 @@ exports.updateAnimal = async (req, res) => {
     }
 
     newAnimal.collarId = collarId;
+  } else {
+    newAnimal.collarId = null;
   }
   Object.assign(animal, newAnimal);
 
@@ -120,7 +124,10 @@ exports.updateAnimal = async (req, res) => {
 // Add an animal to a category
 exports.addAnimal = async (req, res) => {
   await uploadMultipleS3(req, res);
-  const { name, birth_date, healthStatus, collarId, categoryId } = req.body;
+  const { name, birth_date, healthStatus, collarId, categoryId, gender } = req.body;
+
+  console.log({ name, birth_date, healthStatus, collarId, categoryId, gender });
+
   const user = req.user;
   const categoryItem = user.categories.id(categoryId);
 
@@ -131,6 +138,7 @@ exports.addAnimal = async (req, res) => {
     name,
     birth_date,
     healthStatus,
+    gender,
     gallery: req.files.map((e) => e?.key),
   };
   if (collarId) {

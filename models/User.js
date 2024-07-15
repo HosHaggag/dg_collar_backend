@@ -24,6 +24,7 @@ const AnimalSchema = new Schema({
   healthStatus: String,
   collarId: { type: Schema.Types.ObjectId, ref: "Collar" },
   gallery: [String],
+  gender: String,
 });
 
 // Collar Schema
