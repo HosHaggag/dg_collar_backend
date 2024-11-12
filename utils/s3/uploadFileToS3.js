@@ -1,65 +1,44 @@
-const s3 = require("./index.js");
+const s3Client = require("./index.js");
 const slugify = require("./../slugify.js");
-const { PutObjectCommand, DeleteObjectCommand } = require("@aws-sdk/client-s3");
+// const { PutObjectCommand, DeleteObjectCommand } = require("@aws-sdk/client-s3");
 const { videoMimeTypes, imageMimeTypes } = require("./mediaMimeTypes.js");
 // Function to convert a string into a slug
 
+const bucket = process.env.MINIO_BUCKET;
+
 module.exports.uploadFileToS3 = async (file) => {
+
   const slugifiedFilename = `${Date.now()}-${slugify(file.originalname)}`;
 
-  let params;
 
-  if (file.mimetype.includes("image") || file.mimetype.includes("video")) {
-    let buffer = Buffer.from(file.buffer);
-
-    params = {
-      Bucket: process.env.AWS_S3_BUCKET_NAME,
-      Key: slugifiedFilename,
-      Buffer:buffer,
-      Body: buffer,
-      ContentType: file.mimetype,
-    };
+  const exists = await s3Client.bucketExists(bucket)
+  if (exists) {
+    console.log('Bucket ' + bucket + ' exists.')
   } else {
-    throw new Error(`Unsupported file type: ${mimetype}`);
+    await minioClient.makeBucket(bucket, 'us-east-1')
+    console.log('Bucket ' + bucket + ' created in "us-east-1".')
   }
 
-  // Upload the file to S3
-  console.log({ params });
-  let command = new PutObjectCommand(params);
-  // console.log(
-  //   { s3 },
-  //   `
+  var metaData = {
+    'Content-Type': 'text/plain',
+    'X-Amz-Meta-Testing': 1234,
+    example: 5678,
+  }
 
-  // `,
-  //   `  **`,
-  //   command,
-  //   s3.upload
-  // );
-  // s3.upload(command);
-  await s3.send(command);
+  await s3Client.fPutObject(bucket, slugifiedFilename, file.path, metaData)
+  console.log('File uploaded successfully. File name: ' + slugifiedFilename + ' in bucket: ' + bucket) 
   return slugifiedFilename;
+
 };
 
 module.exports.deleteFileFromS3 = async (key) => {
-  try {
-    let params;
-    const mimetype = key.split(".").pop();
-    // console.log({ mimetype });
-    if (imageMimeTypes.includes(mimetype) || videoMimeTypes.includes(mimetype)) {
-      console.log(`image ==>`);
-
-      params = {
-        Bucket: process.env.AWS_S3_BUCKET_NAME,
-        Key: key,
-      };
-    } else {
-      throw new Error(`Unsupported file type: ${mimetype}`);
-    }
-
-    let command = new DeleteObjectCommand(params);
-    await s3.send(command);
-  } catch (err) {
-    console.log(err);
-    throw new Error(`Error while deleting old  avatar`);
+  // Delete the file from minio
+  try{
+    await s3Client.removeObject( bucket, key)
+    console.log('Removed the object: ' + key)
   }
+  catch(err){
+    console.log(err)
+  }
+ 
 };
